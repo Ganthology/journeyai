@@ -149,7 +149,8 @@ model Todo {
 ## 🔗 Links
 
 - [GitHub Repository](https://github.com/ganthology/journeyai)
-- [Live Demo](https://journeyai-ten.vercel.app/)
+- [Live Demo Site](https://journeyai-ten.vercel.app/)
+- [Live Demo Video](https://youtu.be/LPBs_eL9C5I)
 
 ## ✅ Compliance
 

@@ -55,9 +55,11 @@ export async function POST(request: NextRequest) {
       todos: note.todos,
     });
 
+    console.log("notionUrl", notionUrl);
+
     const updatedNote = await prisma.note.update({
       where: { id: note.id },
-      data: { notionUrl },
+      data: { notionUrl: "temp-notion-url" },
     });
 
     return NextResponse.json(updatedNote);
