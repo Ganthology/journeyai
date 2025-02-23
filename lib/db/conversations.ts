@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { ConversationContent } from "@/lib/types/conversation";
+import { ConversationContent, IdeationContent } from "@/lib/types/conversation";
 
 export type ConversationType = "ideation" | "reflection";
 
@@ -83,14 +83,14 @@ export const conversationsService = {
           const ideationContent = data.content as IdeationContent;
           
           await tx.resource.createMany({
-            data: ideationContent.resources.map(resource => ({
+            data: ideationContent.resources.map((resource: string) => ({
               noteId: note.id,
               title: resource,
             })),
           });
 
           await tx.todo.createMany({
-            data: ideationContent.todos.map(todo => ({
+            data: ideationContent.todos.map((todo: string) => ({
               noteId: note.id,
               task: todo,
             })),
@@ -104,11 +104,7 @@ export const conversationsService = {
           Note: {
             include: {
               resources: true,
-              todos: {
-                orderBy: {
-                  dueDate: 'asc',
-                },
-              },
+              todos: true,
             },
           },
         },

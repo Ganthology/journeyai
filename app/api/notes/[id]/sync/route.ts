@@ -10,7 +10,10 @@ export async function POST(request: NextRequest) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const id = request?.nextUrl?.searchParams?.get("id");
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) {
+      return new NextResponse("Missing note ID", { status: 400 });
+    }
 
     const note = await prisma.note.findFirst({
       where: {
@@ -26,8 +29,17 @@ export async function POST(request: NextRequest) {
             type: true,
           },
         },
-        resources: true,
-        todos: true,
+        resources: {
+          select: {
+            title: true,
+          },
+        },
+        todos: {
+          select: {
+            task: true,
+            completed: true,
+          },
+        },
       },
     });
 
@@ -35,7 +47,13 @@ export async function POST(request: NextRequest) {
       return new NextResponse("Note not found", { status: 404 });
     }
 
-    const notionUrl = await createNotionPage(note);
+    const notionUrl = await createNotionPage({
+      id: note.id,
+      content: note.content,
+      conversation: note.conversation,
+      resources: note.resources,
+      todos: note.todos,
+    });
 
     const updatedNote = await prisma.note.update({
       where: { id: note.id },

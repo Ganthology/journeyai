@@ -8,7 +8,7 @@ import { Conversation } from "@11labs/client";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
-import { ReflectionContent, IdeationContent } from "@/lib/types/conversation";
+import { ConversationContent } from "@/lib/types/conversation";
 
 type ConversationType = "ideation" | "reflection";
 
@@ -19,7 +19,7 @@ interface ConversationAIProps {
 type CreateConversationPayload = {
   type: ConversationType;
   title: string;
-  content: ReflectionContent;
+  content: ConversationContent;
 };
 
 async function requestMicrophonePermission() {
@@ -92,7 +92,7 @@ export function ConversationAI({ type }: ConversationAIProps) {
           const result = await createConversation.mutateAsync({
             type,
             title: "Daily Reflection",
-            content: convo as ReflectionContent,
+            content: convo as ConversationContent,
           });
 
           return result.data;
@@ -103,7 +103,7 @@ export function ConversationAI({ type }: ConversationAIProps) {
           const result = await createConversation.mutateAsync({
             type,
             title: "Ideation Session",
-            content: convo as IdeationContent,
+            content: convo as ConversationContent,
           });
 
           return result.data;

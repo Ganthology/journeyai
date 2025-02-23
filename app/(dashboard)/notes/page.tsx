@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { NotionSyncButton } from "@/components/notion-sync-button";
 import { useState } from "react";
+import { IdeationContent } from "@/lib/types/conversation";
 
 type Todo = {
   id: string;

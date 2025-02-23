@@ -27,6 +27,8 @@ export default function RootLayout({
   return (
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      signInFallbackRedirectUrl={"/record"}
+      signUpFallbackRedirectUrl={"/record"}
     >
       <QueryProvider>
         <html lang="en">
