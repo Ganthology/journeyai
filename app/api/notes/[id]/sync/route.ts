@@ -3,19 +3,18 @@ import { prisma } from "@/lib/db";
 import { createNotionPage } from "@/lib/notion";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const id = request?.nextUrl?.searchParams?.get("id");
+
     const note = await prisma.note.findFirst({
       where: {
-        id: context.params.id,
+        id,
         conversation: {
           userId: session.user.id,
         },
