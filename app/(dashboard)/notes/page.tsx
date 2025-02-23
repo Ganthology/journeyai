@@ -1,50 +1,85 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
 
-type NoteContent = {
-  gratitude?: string;
-  tension?: string;
-  win?: string;
-} | string;
+type Todo = {
+  id: string;
+  task: string;
+  completed: boolean;
+};
+
+type Resource = {
+  id: string;
+  title: string;
+};
 
 type Note = {
   id: string;
-  content: NoteContent;
+  content: string | IdeationContent;
   createdAt: string;
+  resources: Resource[];
+  todos: Todo[];
   conversation: {
     title: string;
     type: string;
   };
 };
 
-function NoteContent({ content }: { content: NoteContent }) {
-  if (typeof content === 'string') {
-    return <p className="whitespace-pre-wrap">{content}</p>;
+function NoteContent({ note }: { note: Note }) {
+  const queryClient = useQueryClient();
+  const toggleTodo = useMutation({
+    mutationFn: async (todoId: string) => {
+      await axios.patch(`/api/todos/${todoId}/toggle`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+
+  if (typeof note.content === 'string') {
+    return <p className="whitespace-pre-wrap">{note.content}</p>;
   }
 
+  const content = note.content as IdeationContent;
+
   return (
-    <div className="space-y-4">
-      {content.gratitude && (
+    <div className="space-y-6">
+      <div>
+        <p className="whitespace-pre-wrap">{content.summary}</p>
+      </div>
+
+      {note.resources.length > 0 && (
         <div>
-          <h4 className="font-medium text-sm">Gratitude</h4>
-          <p className="text-muted-foreground">{content.gratitude}</p>
+          <h4 className="font-medium text-sm mb-2">Resources</h4>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            {note.resources.map((resource) => (
+              <li key={resource.id}>{resource.title}</li>
+            ))}
+          </ul>
         </div>
       )}
-      {content.tension && (
+
+      {note.todos.length > 0 && (
         <div>
-          <h4 className="font-medium text-sm">Tension</h4>
-          <p className="text-muted-foreground">{content.tension}</p>
-        </div>
-      )}
-      {content.win && (
-        <div>
-          <h4 className="font-medium text-sm">Win</h4>
-          <p className="text-muted-foreground">{content.win}</p>
+          <h4 className="font-medium text-sm mb-2">Todos</h4>
+          <div className="space-y-2">
+            {note.todos.map((todo) => (
+              <div key={todo.id} className="flex items-center gap-2">
+                <Checkbox
+                  checked={todo.completed}
+                  onCheckedChange={() => toggleTodo.mutate(todo.id)}
+                />
+                <span className={todo.completed ? "line-through" : ""}>
+                  {todo.task}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -103,7 +138,7 @@ export default function NotesPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <NoteContent content={note.content} />
+                <NoteContent note={note} />
               </CardContent>
             </Card>
           ))}

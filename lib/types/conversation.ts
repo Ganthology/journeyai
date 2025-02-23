@@ -20,4 +20,10 @@ export type ReflectionContent = {
   win: string;
 };
 
-export type ConversationContent = ReflectionContent | string; 
+export type IdeationContent = {
+  summary: string;
+  resources: string[];
+  todos: string[];
+};
+
+export type ConversationContent = ReflectionContent | IdeationContent; 

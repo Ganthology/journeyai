@@ -8,7 +8,19 @@ import { Conversation } from "@11labs/client";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
-import { ReflectionContent } from "@/lib/types/conversation";
+import { ReflectionContent, IdeationContent } from "@/lib/types/conversation";
+
+type ConversationType = "ideation" | "reflection";
+
+interface ConversationAIProps {
+  type: ConversationType;
+}
+
+type CreateConversationPayload = {
+  type: ConversationType;
+  title: string;
+  content: ReflectionContent;
+};
 
 async function requestMicrophonePermission() {
   try {
@@ -20,8 +32,15 @@ async function requestMicrophonePermission() {
   }
 }
 
-async function getSignedUrl(): Promise<string> {
-  const response = await fetch("/api/signed-url");
+async function getSignedUrl(type: ConversationType): Promise<string> {
+  const response = await fetch("/api/signed-url", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ type }),
+  });
+
   if (!response.ok) {
     throw Error("Failed to get signed url");
   }
@@ -29,13 +48,7 @@ async function getSignedUrl(): Promise<string> {
   return data.signedUrl;
 }
 
-type CreateConversationPayload = {
-  type: "reflection" | "ideation";
-  title: string;
-  content: ReflectionContent;
-};
-
-export function ConversationAI() {
+export function ConversationAI({ type }: ConversationAIProps) {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -44,8 +57,7 @@ export function ConversationAI() {
     mutationFn: (payload: CreateConversationPayload) =>
       axios.post("/api/conversations", payload),
     onError: (error) => {
-      console.error("Failed to save reflection:", error);
-      // You could add a toast notification here
+      console.error("Failed to save conversation:", error);
     },
   });
 
@@ -55,7 +67,7 @@ export function ConversationAI() {
       alert("No permission");
       return;
     }
-    const signedUrl = await getSignedUrl();
+    const signedUrl = await getSignedUrl(type);
     const conversation = await Conversation.startSession({
       signedUrl: signedUrl,
       onConnect: () => {
@@ -75,10 +87,23 @@ export function ConversationAI() {
       },
       clientTools: {
         summariseReflection: async (convo) => {
+          if (type !== "reflection") return convo;
+
           const result = await createConversation.mutateAsync({
-            type: "reflection",
+            type,
             title: "Daily Reflection",
             content: convo as ReflectionContent,
+          });
+
+          return result.data;
+        },
+        summariseIdeation: async (convo) => {
+          if (type !== "ideation") return convo;
+
+          const result = await createConversation.mutateAsync({
+            type,
+            title: "Ideation Session",
+            content: convo as IdeationContent,
           });
 
           return result.data;
@@ -103,10 +128,10 @@ export function ConversationAI() {
           <CardHeader>
             <CardTitle className={"text-center"}>
               {createConversation.isPending
-                ? "Saving reflection..."
+                ? "Saving conversation..."
                 : isConnected
                 ? isSpeaking
-                  ? `Agent is speaking`
+                  ? "Agent is speaking"
                   : "Agent is listening"
                 : "Disconnected"}
             </CardTitle>
@@ -118,7 +143,7 @@ export function ConversationAI() {
                 isSpeaking ? "animate-orb" : conversation && "animate-orb-slow",
                 isConnected ? "orb-active" : "orb-inactive"
               )}
-            ></div>
+            />
 
             <Button
               variant={"outline"}

@@ -71,10 +71,7 @@ export default function RecordPage() {
         >
           ← Back
         </Button>
-        <h2 className="text-xl font-semibold capitalize">
-          {activeConversation} Session
-        </h2>
-        <ConversationAI />
+        <ConversationAI type={activeConversation} />
       </div>
     );
   }

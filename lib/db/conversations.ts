@@ -67,21 +67,50 @@ export const conversationsService = {
       });
 
       if (data.content) {
-        await tx.note.create({
+        const content = typeof data.content === 'string' 
+          ? data.content 
+          : JSON.stringify(data.content);
+
+        const note = await tx.note.create({
           data: {
             conversationId: conversation.id,
-            content:
-              typeof data.content === "string"
-                ? data.content
-                : JSON.stringify(data.content),
+            content,
           },
         });
+
+        // Create resources and todos if it's an ideation
+        if (data.type === 'ideation' && typeof data.content !== 'string') {
+          const ideationContent = data.content as IdeationContent;
+          
+          await tx.resource.createMany({
+            data: ideationContent.resources.map(resource => ({
+              noteId: note.id,
+              title: resource,
+            })),
+          });
+
+          await tx.todo.createMany({
+            data: ideationContent.todos.map(todo => ({
+              noteId: note.id,
+              task: todo,
+            })),
+          });
+        }
       }
 
       return tx.conversation.findUnique({
         where: { id: conversation.id },
         include: {
-          Note: true,
+          Note: {
+            include: {
+              resources: true,
+              todos: {
+                orderBy: {
+                  dueDate: 'asc',
+                },
+              },
+            },
+          },
         },
       });
     });

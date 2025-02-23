@@ -45,14 +45,39 @@ model Conversation {
 }
 
 model Note {
-  id             String       @id @default(cuid())
-  content        String       @db.Text
+  id             String     @id @default(cuid())
+  content        String     @db.Text
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  conversationId String       @unique
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  conversationId String     @unique
+  resources      Resource[]
+  todos          Todo[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   @@index([conversationId])
+}
+
+model Resource {
+  id        String   @id @default(cuid())
+  title     String
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([noteId])
+}
+
+model Todo {
+  id        String   @id @default(cuid())
+  task      String
+  completed Boolean  @default(false)
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([noteId])
 }
 
 model Agent {
