@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -13,19 +12,6 @@ type WebhookPayload = {
 export async function POST(req: Request) {
   try {
     // Verify webhook secret
-    const headerPayload = await headers();
-    const webhookSecret = headerPayload.get("webhook-secret");
-
-    console.log("Received webhook with secret:", webhookSecret); // Debug log
-
-    if (webhookSecret !== process.env.CLERK_WEBHOOK_SECRET) {
-      console.log("Webhook secret mismatch:", {
-        received: webhookSecret,
-        expected: process.env.CLERK_WEBHOOK_SECRET,
-      });
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
     const payload = (await req.json()) as WebhookPayload;
     console.log("Received webhook payload:", payload); // Debug log
 
