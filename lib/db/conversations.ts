@@ -52,14 +52,7 @@ export const conversationsService = {
         });
         console.log("Created missing user:", data.userId);
       } catch (error) {
-        if (error.code === "P2002") {
-          // If user was created concurrently, fetch it
-          user = await prisma.user.findUnique({
-            where: { id: data.userId },
-          });
-        } else {
-          throw error;
-        }
+        console.error("Error creating user:", error);
       }
     }
 
