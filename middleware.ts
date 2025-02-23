@@ -1,10 +1,14 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export default clerkMiddleware();
+const publicRoutes = ["/api/webhooks(.*)"];
+const ignoredRoutes = ["/api/webhooks(.*)"];
 
-export const config = {
-  publicRoutes: ["/api/webhooks(.*)"],
-  ignoredRoutes: ["/api/webhooks(.*)"],
+export default clerkMiddleware({
+  publicRoutes,
+  ignoredRoutes,
+  beforeAuth: () => {
+    // Execute any code before authentication is performed
+  },
   afterAuth(auth, req) {
     // Handle users who aren't authenticated
     if (!auth.userId && !auth.isPublicRoute) {
@@ -22,5 +26,8 @@ export const config = {
       return Response.redirect(new URL("/record", req.url));
     }
   },
+});
+
+export const config = {
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };

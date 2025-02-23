@@ -1,12 +1,15 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createNotionPage } from "@/lib/notion";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+type RouteParams = {
+  params: {
+    id: string;
+  };
+};
+
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth();
     if (!session?.user) {
