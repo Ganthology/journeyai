@@ -51,6 +51,7 @@ model Note {
   conversationId String     @unique
   resources      Resource[]
   todos          Todo[]
+  notionUrl      String?    // URL to the synced Notion page
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 

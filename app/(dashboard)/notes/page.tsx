@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import { NotionSyncButton } from "@/components/notion-sync-button";
 
 type Todo = {
   id: string;
@@ -22,6 +23,7 @@ type Note = {
   id: string;
   content: string | IdeationContent;
   createdAt: string;
+  notionUrl: string | null;
   resources: Resource[];
   todos: Todo[];
   conversation: {
@@ -130,11 +132,14 @@ export default function NotesPage() {
                       {note.conversation.type}
                     </p>
                   </div>
-                  <time className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(note.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </time>
+                  <div className="flex items-center gap-2">
+                    <NotionSyncButton noteId={note.id} notionUrl={note.notionUrl} />
+                    <time className="text-sm text-muted-foreground">
+                      {formatDistanceToNow(new Date(note.createdAt), {
+                        addSuffix: true,
+                      })}
+                    </time>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
