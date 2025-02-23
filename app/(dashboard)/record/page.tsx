@@ -10,24 +10,52 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LightbulbIcon, BrainCircuitIcon, ClockIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 type ConversationType = "ideation" | "reflection" | null;
 
-// Mock data - Replace with actual data from your backend
-const pastSessions = [
-  {
-    id: 1,
-    type: "ideation",
-    date: "2024-03-20",
-    title: "Project Brainstorming",
-  },
-  { id: 2, type: "reflection", date: "2024-03-19", title: "Daily Reflection" },
-  { id: 3, type: "ideation", date: "2024-03-18", title: "Feature Ideas" },
-];
+type Conversation = {
+  id: string;
+  type: "ideation" | "reflection";
+  title: string;
+  createdAt: string;
+};
+
+function EmptyState() {
+  return (
+    <div className="text-center p-8 rounded-lg border border-dashed bg-muted/50">
+      <div className="flex flex-col items-center gap-2">
+        <LightbulbIcon className="w-10 h-10 text-muted-foreground" />
+        <h3 className="font-semibold text-lg">No conversations yet</h3>
+        <p className="text-sm text-muted-foreground">
+          Start a new conversation by selecting one of the options above
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ErrorState() {
+  return <EmptyState />;
+}
 
 export default function RecordPage() {
   const [activeConversation, setActiveConversation] =
     useState<ConversationType>(null);
+
+  const {
+    data: conversations,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["conversations"],
+    queryFn: async () => {
+      const response = await axios.get("/api/conversations");
+      return response.data as Conversation[];
+    },
+    initialData: [],
+  });
 
   const handleConversationStart = (type: ConversationType) => {
     setActiveConversation(type);
@@ -98,22 +126,37 @@ export default function RecordPage() {
           Past Sessions
         </h2>
         <div className="grid gap-3">
-          {pastSessions.map((session) => (
-            <div
-              key={session.id}
-              className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-            >
-              <div className="flex flex-col gap-1">
-                <h3 className="font-medium">{session.title}</h3>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {session.type}
+          {isLoading ? (
+            <div className="text-center p-8 rounded-lg border bg-muted/50">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <p className="text-sm text-muted-foreground">
+                  Loading conversations...
                 </p>
               </div>
-              <time className="text-sm text-muted-foreground">
-                {new Date(session.date).toLocaleDateString()}
-              </time>
             </div>
-          ))}
+          ) : error ? (
+            <ErrorState />
+          ) : conversations?.length === 0 ? (
+            <EmptyState />
+          ) : (
+            conversations?.map((session) => (
+              <div
+                key={session.id}
+                className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+              >
+                <div className="flex flex-col gap-1">
+                  <h3 className="font-medium">{session.title}</h3>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {session.type}
+                  </p>
+                </div>
+                <time className="text-sm text-muted-foreground">
+                  {new Date(session.createdAt).toLocaleDateString()}
+                </time>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  conversations Conversation[]
+  dailyQuota    DailyQuota?
+}
+
+model DailyQuota {
+  id             String   @id @default(cuid())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String   @unique
+  date           DateTime @default(now()) @db.Date
+  remainingQuota Int      @default(5) // Default 5 conversations per day
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, date])
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  type      String // "ideation" or "reflection"
+  title     String
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  Note      Note?
+  Agent     Agent?   @relation(fields: [agentId], references: [id])
+  agentId   String?
+
+  @@index([userId])
+}
+
+model Note {
+  id             String       @id @default(cuid())
+  content        String       @db.Text
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String       @unique
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([conversationId])
+}
+
+model Agent {
+  id            String         @id
+  name          String
+  description   String?
+  conversations Conversation[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
