@@ -1,5 +1,6 @@
 import { Client } from "@notionhq/client";
 import { IdeationContent, ReflectionContent } from "./types/conversation";
+import { BlockObjectRequest } from "@notionhq/client/build/src/api-endpoints";
 
 const notion = new Client({
   auth: process.env.NOTION_API_KEY,
@@ -18,18 +19,22 @@ export async function createNotionPage(note: {
   todos?: { task: string; completed: boolean }[];
 }) {
   try {
-    let parsedContent: ReflectionContent | IdeationContent;
-    try {
-      parsedContent = JSON.parse(note.content);
-    } catch {
-      parsedContent = note.content;
-    }
-
     const blocks = [];
 
-    // Add content blocks based on note type
+    // Handle content based on conversation type
     if (note.conversation.type === "reflection") {
-      const content = parsedContent as ReflectionContent;
+      let reflectionContent: ReflectionContent;
+      try {
+        reflectionContent = JSON.parse(note.content);
+      } catch {
+        // If parsing fails, create a default structure
+        reflectionContent = {
+          gratitude: note.content,
+          tension: "",
+          win: "",
+        };
+      }
+
       blocks.push(
         {
           type: "heading_2",
@@ -38,7 +43,7 @@ export async function createNotionPage(note: {
         {
           type: "paragraph",
           paragraph: {
-            rich_text: [{ text: { content: content.gratitude } }],
+            rich_text: [{ text: { content: reflectionContent.gratitude } }],
           },
         },
         {
@@ -47,7 +52,9 @@ export async function createNotionPage(note: {
         },
         {
           type: "paragraph",
-          paragraph: { rich_text: [{ text: { content: content.tension } }] },
+          paragraph: {
+            rich_text: [{ text: { content: reflectionContent.tension } }],
+          },
         },
         {
           type: "heading_2",
@@ -55,11 +62,24 @@ export async function createNotionPage(note: {
         },
         {
           type: "paragraph",
-          paragraph: { rich_text: [{ text: { content: content.win } }] },
+          paragraph: {
+            rich_text: [{ text: { content: reflectionContent.win } }],
+          },
         }
       );
     } else {
-      const content = parsedContent as IdeationContent;
+      let ideationContent: IdeationContent;
+      try {
+        ideationContent = JSON.parse(note.content);
+      } catch {
+        // If parsing fails, create a default structure
+        ideationContent = {
+          summary: note.content,
+          resources: [],
+          todos: [],
+        };
+      }
+
       blocks.push(
         {
           type: "heading_2",
@@ -67,7 +87,9 @@ export async function createNotionPage(note: {
         },
         {
           type: "paragraph",
-          paragraph: { rich_text: [{ text: { content: content.summary } }] },
+          paragraph: {
+            rich_text: [{ text: { content: ideationContent.summary } }],
+          },
         }
       );
     }
@@ -122,12 +144,12 @@ export async function createNotionPage(note: {
           },
         },
       },
-      children: blocks,
+      children: blocks as BlockObjectRequest[],
     });
 
-    return response.url;
+    return response;
   } catch (error) {
     console.error("Failed to create Notion page:", error);
     throw error;
   }
-} 
+}
