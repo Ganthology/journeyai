@@ -12,4 +12,12 @@ export type ConversationWithNote = Conversation & {
     createdAt: string;
     updatedAt: string;
   } | null;
-}; 
+};
+
+export type ReflectionContent = {
+  gratitude: string;
+  tension: string;
+  win: string;
+};
+
+export type ConversationContent = ReflectionContent | string; 

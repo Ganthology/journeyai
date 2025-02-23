@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { ConversationContent } from "@/lib/types/conversation";
 
 export type ConversationType = "ideation" | "reflection";
 
@@ -21,6 +22,11 @@ export const conversationsService = {
             name: true,
           },
         },
+        Note: {
+          select: {
+            content: true,
+          },
+        },
       },
     });
   },
@@ -29,13 +35,62 @@ export const conversationsService = {
     userId: string;
     type: ConversationType;
     title: string;
+    content?: ConversationContent;
   }) {
-    return prisma.conversation.create({
-      data: {
-        userId: data.userId,
-        type: data.type,
-        title: data.title,
-      },
+    // First verify the user exists, create if not
+    let user = await prisma.user.findUnique({
+      where: { id: data.userId },
+    });
+
+    if (!user) {
+      // Create user if doesn't exist
+      try {
+        user = await prisma.user.create({
+          data: {
+            id: data.userId,
+          },
+        });
+        console.log("Created missing user:", data.userId);
+      } catch (error) {
+        if (error.code === "P2002") {
+          // If user was created concurrently, fetch it
+          user = await prisma.user.findUnique({
+            where: { id: data.userId },
+          });
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    // Create the conversation with transaction to ensure consistency
+    return prisma.$transaction(async (tx) => {
+      const conversation = await tx.conversation.create({
+        data: {
+          userId: data.userId,
+          type: data.type,
+          title: data.title,
+        },
+      });
+
+      if (data.content) {
+        await tx.note.create({
+          data: {
+            conversationId: conversation.id,
+            content:
+              typeof data.content === "string"
+                ? data.content
+                : JSON.stringify(data.content),
+          },
+        });
+      }
+
+      return tx.conversation.findUnique({
+        where: { id: conversation.id },
+        include: {
+          Note: true,
+        },
+      });
     });
   },
 

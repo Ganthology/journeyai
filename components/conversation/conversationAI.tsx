@@ -6,6 +6,9 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Conversation } from "@11labs/client";
 import { cn } from "@/lib/utils";
+import axios from "axios";
+import { useMutation } from "@tanstack/react-query";
+import { ReflectionContent } from "@/lib/types/conversation";
 
 async function requestMicrophonePermission() {
   try {
@@ -26,10 +29,25 @@ async function getSignedUrl(): Promise<string> {
   return data.signedUrl;
 }
 
+type CreateConversationPayload = {
+  type: "reflection" | "ideation";
+  title: string;
+  content: ReflectionContent;
+};
+
 export function ConversationAI() {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const createConversation = useMutation({
+    mutationFn: (payload: CreateConversationPayload) =>
+      axios.post("/api/conversations", payload),
+    onError: (error) => {
+      console.error("Failed to save reflection:", error);
+      // You could add a toast notification here
+    },
+  });
 
   async function startConversation() {
     const hasPermission = await requestMicrophonePermission();
@@ -57,8 +75,13 @@ export function ConversationAI() {
       },
       clientTools: {
         summariseReflection: async (convo) => {
-          console.log("🚀 ~ summariseReflection: ~ conversation:", convo);
-          return convo;
+          const result = await createConversation.mutateAsync({
+            type: "reflection",
+            title: "Daily Reflection",
+            content: convo as ReflectionContent,
+          });
+
+          return result.data;
         },
       },
     });
@@ -79,7 +102,9 @@ export function ConversationAI() {
         <CardContent>
           <CardHeader>
             <CardTitle className={"text-center"}>
-              {isConnected
+              {createConversation.isPending
+                ? "Saving reflection..."
+                : isConnected
                 ? isSpeaking
                   ? `Agent is speaking`
                   : "Agent is listening"
