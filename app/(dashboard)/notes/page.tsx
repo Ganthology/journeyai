@@ -43,7 +43,7 @@ function NoteContent({ note }: { note: Note }) {
     },
   });
 
-  if (typeof note.content === 'string') {
+  if (typeof note.content === "string") {
     return <p className="whitespace-pre-wrap">{note.content}</p>;
   }
 
@@ -55,7 +55,7 @@ function NoteContent({ note }: { note: Note }) {
         <p className="whitespace-pre-wrap">{content.summary}</p>
       </div>
 
-      {note.resources.length > 0 && (
+      {note.resources && note.resources.length > 0 && (
         <div>
           <h4 className="font-medium text-sm mb-2">Resources</h4>
           <ul className="list-disc list-inside space-y-1 text-muted-foreground">
@@ -66,7 +66,7 @@ function NoteContent({ note }: { note: Note }) {
         </div>
       )}
 
-      {note.todos.length > 0 && (
+      {note.todos && note.todos.length > 0 && (
         <div>
           <h4 className="font-medium text-sm mb-2">Todos</h4>
           <div className="space-y-2">
@@ -133,7 +133,10 @@ export default function NotesPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <NotionSyncButton noteId={note.id} notionUrl={note.notionUrl} />
+                    <NotionSyncButton
+                      noteId={note.id}
+                      notionUrl={note.notionUrl}
+                    />
                     <time className="text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(note.createdAt), {
                         addSuffix: true,

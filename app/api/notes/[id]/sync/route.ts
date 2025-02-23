@@ -3,13 +3,10 @@ import { prisma } from "@/lib/db";
 import { createNotionPage } from "@/lib/notion";
 import { NextRequest, NextResponse } from "next/server";
 
-type RouteParams = {
-  params: {
-    id: string;
-  };
-};
-
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -18,7 +15,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const note = await prisma.note.findFirst({
       where: {
-        id: params.id,
+        id: context.params.id,
         conversation: {
           userId: session.user.id,
         },
@@ -42,7 +39,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const notionUrl = await createNotionPage(note);
 
     const updatedNote = await prisma.note.update({
-      where: { id: params.id },
+      where: { id: note.id },
       data: { notionUrl },
     });
 
@@ -51,4 +48,4 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.error("[NOTE_SYNC]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-} 
+}
