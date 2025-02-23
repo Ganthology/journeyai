@@ -1,12 +1,30 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { authMiddleware } from "@clerk/nextjs";
 
-export default clerkMiddleware();
+export default authMiddleware({
+  // Routes that can be accessed while signed out
+  publicRoutes: ["/api/webhooks(.*)"],
+  // Routes that can always be accessed, and have
+  // no authentication information
+  ignoredRoutes: ["/api/webhooks(.*)"],
+  afterAuth(auth, req) {
+    // Handle users who aren't authenticated
+    if (!auth.userId && !auth.isPublicRoute) {
+      const signInUrl = new URL("/sign-in", req.url);
+      signInUrl.searchParams.set("redirect_url", req.url);
+      return Response.redirect(signInUrl);
+    }
+
+    // Redirect signed in users from auth pages to record page
+    if (
+      auth.userId &&
+      (req.nextUrl.pathname === "/sign-in" ||
+        req.nextUrl.pathname === "/sign-up")
+    ) {
+      return Response.redirect(new URL("/record", req.url));
+    }
+  },
+});
 
 export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
-  ],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
