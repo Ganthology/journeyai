@@ -1,12 +1,13 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { NotionSyncButton } from "@/components/notion-sync-button";
+import { useState } from "react";
 
 type Todo = {
   id: string;
@@ -33,15 +34,21 @@ type Note = {
 };
 
 function NoteContent({ note }: { note: Note }) {
-  const queryClient = useQueryClient();
-  const toggleTodo = useMutation({
-    mutationFn: async (todoId: string) => {
-      await axios.patch(`/api/todos/${todoId}/toggle`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-    },
-  });
+  const [completedTodos, setCompletedTodos] = useState<Set<string>>(
+    new Set(note.todos?.filter(todo => todo.completed).map(todo => todo.id))
+  );
+
+  const toggleTodo = (todoId: string) => {
+    setCompletedTodos(prev => {
+      const next = new Set(prev);
+      if (next.has(todoId)) {
+        next.delete(todoId);
+      } else {
+        next.add(todoId);
+      }
+      return next;
+    });
+  };
 
   if (typeof note.content === "string") {
     return <p className="whitespace-pre-wrap">{note.content}</p>;
@@ -73,10 +80,10 @@ function NoteContent({ note }: { note: Note }) {
             {note.todos.map((todo) => (
               <div key={todo.id} className="flex items-center gap-2">
                 <Checkbox
-                  checked={todo.completed}
-                  onCheckedChange={() => toggleTodo.mutate(todo.id)}
+                  checked={completedTodos.has(todo.id)}
+                  onCheckedChange={() => toggleTodo(todo.id)}
                 />
-                <span className={todo.completed ? "line-through" : ""}>
+                <span className={completedTodos.has(todo.id) ? "line-through" : ""}>
                   {todo.task}
                 </span>
               </div>
